@@ -264,30 +264,42 @@ sb.auth.onAuthStateChange(async(event,session)=>{
     currentUser=session.user;
     document.getElementById('login-screen').style.display='none';
     document.getElementById('app-screen').style.display='block';
-    await loadUserData();
+    // Show UI immediately with defaults, then load data
     render();
+    loadUserData();
+  } else if(event==='SIGNED_OUT'){
+    document.getElementById('app-screen').style.display='none';
+    document.getElementById('login-screen').style.display='flex';
   }
 });
 
 // ── Data loading ──
 async function loadUserData(){
   setSyncInd('Lade Prompts…');
-  // Load settings (KIs, Bereiche)
-  const{data:settings}=await sb.from('user_settings').select('*').eq('user_id',currentUser.id).single();
-  if(settings){
-    if(settings.kis)kis=JSON.parse(settings.kis);
-    if(settings.bers)bers=JSON.parse(settings.bers);
-  }
-  // Load prompts
-  const{data,error}=await sb.from('prompts').select('*').eq('user_id',currentUser.id).eq('deleted',false).order('created_at',{ascending:true});
-  if(!error&&data){
-    prompts=data;
+  try{
+    // Load settings with timeout
+    const settingsPromise=sb.from('user_settings').select('*').eq('user_id',currentUser.id).maybeSingle();
+    const{data:settings}=await settingsPromise;
+    if(settings){
+      if(settings.kis)try{kis=JSON.parse(settings.kis);}catch(e){}
+      if(settings.bers)try{bers=JSON.parse(settings.bers);}catch(e){}
+      renderChips();
+    }
+  }catch(e){console.log('Settings load error:',e);}
+
+  try{
+    // Load prompts
+    const{data,error}=await sb.from('prompts').select('*').eq('user_id',currentUser.id).order('created_at',{ascending:true});
+    if(error){console.log('Prompts error:',error);setSyncInd('Fehler beim Laden');return;}
+    prompts=(data||[]);
     // First time: insert demo prompts
-    if(prompts.length===0){
+    if(prompts.filter(p=>!p.deleted).length===0){
+      setSyncInd('Erstelle Demo-Prompts…');
       await insertDemoPrompts();
     }
-  }
-  setSyncInd('');
+    setSyncInd('');
+    render();
+  }catch(e){console.log('Load error:',e);setSyncInd('Fehler — bitte neu laden');}
 }
 
 async function insertDemoPrompts(){
