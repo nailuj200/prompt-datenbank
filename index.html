@@ -444,7 +444,7 @@ ${MULTI_FIELDS.includes(s)?`<textarea rows="2" id="sl_${s}" oninput="updateOutpu
   <div style="font-size:11px;color:var(--text2)">Fertiger Prompt</div>
   <div style="font-size:10px;color:var(--text3)">✎ direkt bearbeitbar</div>
 </div>
-<div class="outbox" id="outbox" contenteditable="true" spellcheck="false">${esc(p.template)}</div>
+<div class="outbox" id="outbox" contenteditable="true" spellcheck="false" oninput="syncBase()">${esc(p.template)}</div>
 <button class="copybtn" id="copybtn" onclick="copyIt()">Prompt kopieren</button>
 <button class="resetbtn" onclick="resetFill()">Felder zurücksetzen</button>
 <span class="editlink" onclick="openEdit('${p.id}')">Prompt bearbeiten</span>`;
