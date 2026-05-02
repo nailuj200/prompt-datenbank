@@ -83,8 +83,9 @@ h1{font-size:17px;font-weight:600;color:var(--text);letter-spacing:-.2px}
 .xbtn:hover{background:var(--bg4);color:var(--text)}
 .lbl{font-size:11px;color:var(--text2);display:block;margin:11px 0 4px;font-weight:500}
 .lbl:first-of-type{margin-top:0}
-.fi{width:100%;padding:8px 11px;border:1px solid var(--border);border-radius:9px;background:var(--bg3);outline:none;resize:vertical;color:var(--text);transition:border-color .15s;appearance:none;-webkit-appearance:none;max-height:32vh;overflow-y:auto}
+.fi{width:100%;padding:8px 11px;border:1px solid var(--border);border-radius:9px;background:var(--bg3);outline:none;resize:vertical;color:var(--text);transition:border-color .15s;appearance:none;-webkit-appearance:none}
 .fi:focus{border-color:var(--accent)}
+textarea.fi{min-height:180px;max-height:32vh;overflow-y:auto;}
 .row2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .hint{font-size:10px;color:var(--text3);margin-top:4px}
 .mactions{display:flex;gap:8px;margin-top:16px;justify-content:flex-end;flex-wrap:wrap}
@@ -201,10 +202,10 @@ const DEFAULT_KIS=['Claude','Claude Code','Claude Cowork','ChatGPT','Gemini','Pe
 const DEFAULT_BER=['Studium / Uni','Arbeit / Bank','Trading','Fitness','Programmierung','Reise','Schreiben','Allgemein'];
 const MULTI_FIELDS=['CODE','SCHWERPUNKTE','ANLIEGEN','KONTEXT','BEGRUENDUNG','INHALT','TEXT'];
 const DEMO_PROMPTS=[
-  {title:'Klausurvorbereitung',ki:'Claude',bereich:'Studium / Uni',template:'Du bist mein Lernassistent für die Klausur [KLAUSUR_NAME] am [DATUM]. Der Professor hat folgende Schwerpunkte genannt: [SCHWERPUNKTE]. Mein aktueller Wissensstand: [WISSENSSTAND]. Erstelle mir einen strukturierten Lernplan für die verbleibenden [TAGE] Tage.',slots:'KLAUSUR_NAME,DATUM,SCHWERPUNKTE,WISSENSSTAND,TAGE',fav:false,deleted:false},
-  {title:'E-Mail professionell formulieren',ki:'Claude',bereich:'Arbeit / Bank',template:'Formuliere folgende E-Mail professionell auf Deutsch. Empfänger: [EMPFAENGER]. Mein Anliegen: [ANLIEGEN]. Ton: [TON]. Länge: [LAENGE].',slots:'EMPFAENGER,ANLIEGEN,TON,LAENGE',fav:false,deleted:false},
-  {title:'Code Review',ki:'ChatGPT',bereich:'Programmierung',template:'Review the following [SPRACHE] code for bugs, performance issues, and best practices.\n\nContext: [KONTEXT]\n\n[CODE]',slots:'SPRACHE,KONTEXT,CODE',fav:true,deleted:false},
-  {title:'Trading-Setup analysieren',ki:'Perplexity',bereich:'Trading',template:'Analysiere folgendes Trading-Setup. Asset: [ASSET]. Timeframe: [TIMEFRAME]. Einstieg: [EINSTIEG]. Stop-Loss: [STOP]. Take-Profit: [TP]. Begründung: [BEGRUENDUNG].',slots:'ASSET,TIMEFRAME,EINSTIEG,STOP,TP,BEGRUENDUNG',fav:false,deleted:false},
+  {title:'Klausurvorbereitung',ki:'Claude',bereich:'Studium / Uni',template:'Du bist mein Lernassistent für die Klausur [[Name der Klausur]] am [[Datum]]. Der Professor hat folgende Schwerpunkte genannt: [[Schwerpunkte des Professors]]. Mein aktueller Wissensstand: [[mein Wissensstand]]. Erstelle mir einen strukturierten Lernplan für die verbleibenden [[Anzahl Tage]] Tage.',slots:'Name der Klausur,Datum,Schwerpunkte des Professors,mein Wissensstand,Anzahl Tage',fav:false,deleted:false},
+  {title:'E-Mail professionell formulieren',ki:'Claude',bereich:'Arbeit / Bank',template:'Formuliere folgende E-Mail professionell auf Deutsch. Empfänger: [[Empfänger]]. Mein Anliegen: [[mein Anliegen]]. Ton: [[gewünschter Ton]]. Länge: [[gewünschte Länge]].',slots:'Empfänger,mein Anliegen,gewünschter Ton,gewünschte Länge',fav:false,deleted:false},
+  {title:'Code Review',ki:'ChatGPT',bereich:'Programmierung',template:'Review the following [[Programmiersprache]] code for bugs, performance issues, and best practices.\n\nContext: [[Kontext und Ziel des Codes]]\n\n[[Code einfügen]]',slots:'Programmiersprache,Kontext und Ziel des Codes,Code einfügen',fav:true,deleted:false},
+  {title:'Trading-Setup analysieren',ki:'Perplexity',bereich:'Trading',template:'Analysiere folgendes Trading-Setup. Asset: [[Asset oder Aktie]]. Timeframe: [[Zeitrahmen]]. Einstieg: [[geplanter Einstieg]]. Stop-Loss: [[Stop-Loss Level]]. Take-Profit: [[Take-Profit Level]]. Begründung: [[meine Begründung]].',slots:'Asset oder Aktie,Zeitrahmen,geplanter Einstieg,Stop-Loss Level,Take-Profit Level,meine Begründung',fav:false,deleted:false},
 ];
 
 // ── State ──
@@ -217,7 +218,7 @@ let loginMode='login'; // 'login' | 'register'
 
 // ── Helpers ──
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
-function extractSlots(t){return[...new Set((t.match(/\[([^\]]+)\]/g)||[]).map(m=>m.slice(1,-1).trim()).filter(s=>s.length>0))];}
+function extractSlots(t){return[...new Set((t.match(/\[\[([^\]]+)\]\]/g)||[]).map(m=>m.slice(2,-2).trim()).filter(s=>s.length>0))];}
 function setSyncInd(msg){const el=document.getElementById('sync-ind');if(el)el.textContent=msg;}
 
 // ── Auth ──
@@ -379,7 +380,7 @@ function buildEditHTML(p){
 </div>
 <span class="lbl">Prompt-Template</span>
 <textarea class="fi" id="e_tpl" rows="5" placeholder="Platzhalter als [VARIABLE], z.B. [KLAUSUR_NAME].">${esc(p?p.template:'')}</textarea>
-<div class="hint">Platzhalter in [GROSSBUCHSTABEN] werden automatisch als Felder erkannt.</div>
+<div class="hint">Platzhalter als [[doppelte eckige Klammern]], z.B. [[Name der Klausur]] oder [[Schwerpunkte des Professors]]. Beliebiger Text, auch mehrere Wörter.</div>
 <div class="mactions">
   ${p?`<button class="mbtn danger" onclick="softDelete('${p.id}')">In Papierkorb</button>`:''}
   <button class="mbtn" onclick="closeModal()">Abbrechen</button>
@@ -435,10 +436,10 @@ function buildFillHTML(p,slots){
     <span class="xbtn" onclick="closeModal()">×</span>
   </div>
 </div>
-${slots.length?`<div style="font-size:12px;font-weight:500;margin-bottom:8px;color:var(--text)">Felder ausfüllen</div>${slots.map(s=>`
-<div class="ffield"><label>${esc(s.replace(/_/g,' ').toLowerCase().replace(/^\w/,c=>c.toUpperCase()))}</label>
-${MULTI_FIELDS.includes(s)?`<textarea rows="2" id="sl_${s}" oninput="updateOutput()" placeholder="${esc(s)}"></textarea>`:`<input type="text" id="sl_${s}" oninput="updateOutput()" placeholder="${esc(s)}">`}
-</div>`).join('')}`:''}
+${slots.length?`<div style="font-size:12px;font-weight:500;margin-bottom:8px;color:var(--text)">Felder ausfüllen</div>${slots.map(s=>{const sid='sl_'+s.replace(/\s+/g,'_').replace(/[^a-zA-Z0-9_]/g,'');return`
+<div class="ffield"><label>${esc(s)}</label>
+${MULTI_FIELDS.includes(s.toUpperCase().replace(/\s+/g,'_'))||s.length>20?`<textarea rows="2" id="${sid}" oninput="updateOutput()" placeholder="${esc(s)}"></textarea>`:`<input type="text" id="${sid}" oninput="updateOutput()" placeholder="${esc(s)}">`}
+</div>`;}).join('')}`:''}
 <hr class="divider">
 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
   <div style="font-size:11px;color:var(--text2)">Fertiger Prompt</div>
@@ -456,7 +457,7 @@ function syncBase(){
   const box=document.getElementById('outbox');if(!box)return;
   const slots=[...new Set([...extractSlots(p.template),...(p.slots?p.slots.split(',').filter(Boolean):[])])];
   let base=box.textContent;
-  slots.forEach(s=>{const el=document.getElementById('sl_'+s);if(el&&el.value.trim())base=base.split(el.value.trim()).join('['+s+']');});
+  slots.forEach(s=>{const sid='sl_'+s.replace(/\s+/g,'_').replace(/[^a-zA-Z0-9_]/g,'');const el=document.getElementById(sid);if(el&&el.value.trim())base=base.split(el.value.trim()).join('[['+s+']]');});
   box._base=base;
 }
 
@@ -468,9 +469,10 @@ function updateOutput(){
   let base=box._base||p.template;
   let out=base;
   slots.forEach(s=>{
-    const el=document.getElementById('sl_'+s);
-    const val=el&&el.value.trim()?el.value.trim():'['+s+']';
-    out=out.split('['+s+']').join(val);
+    const sid='sl_'+s.replace(/\s+/g,'_').replace(/[^a-zA-Z0-9_]/g,'');
+    const el=document.getElementById(sid);
+    const val=el&&el.value.trim()?el.value.trim():'[['+s+']]';
+    out=out.split('[['+s+']]').join(val);
   });
   const sel=window.getSelection();
   let node=null,offset=0;
